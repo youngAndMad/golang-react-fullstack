@@ -11,8 +11,14 @@ import (
 
 func WriteJSON(w http.ResponseWriter, status int, value any) error {
 	w.WriteHeader(status)
-	w.Header().Add("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(value)
+}
+
+func commonMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
@@ -26,6 +32,8 @@ func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
 
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
+
+	router.Use(commonMiddleware)
 
 	router.HandleFunc("/user", makeHTTPHandlerFunc(s.handleUser))
 	router.HandleFunc("/user/{id}", makeHTTPHandlerFunc(s.handleGetUser))
@@ -75,7 +83,6 @@ func (s *APIServer) handleCreateUser(
 	if err != nil {
 		return err
 	}
-	log.Println(user)
 	return WriteJSON(w, http.StatusCreated, user)
 }
 
