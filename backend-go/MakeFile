@@ -1,0 +1,9 @@
+build:
+	@go build -o bin/backend-go
+
+run: build
+	@./bin/backend-go
+
+test:
+	@go test -v ./...
+
