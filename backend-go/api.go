@@ -21,7 +21,7 @@ type ApiError struct {
 
 func WriteJSON(w http.ResponseWriter, status int, value any) error {
 	w.WriteHeader(status)
-	w.Header().Set("Content-type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(value)
 }
 
@@ -37,7 +37,8 @@ func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/account", makeHTTPHandlerFunc(s.handleAccount))
+	router.HandleFunc("/user", makeHTTPHandlerFunc(s.handleUser))
+	router.HandleFunc("/user/{id}", makeHTTPHandlerFunc(s.handleGetUser))
 
 	log.Println("server running on port", s.listenAddr)
 
@@ -52,40 +53,37 @@ func newAPIServer(
 	}
 }
 
-func (s *APIServer) handleAccount(
+func (s *APIServer) handleUser(
 	w http.ResponseWriter, r *http.Request,
 ) error {
 	if r.Method == "GET" {
-		return s.handleGetAccount(w, r)
+		return s.handleGetUser(w, r)
 	}
 	if r.Method == "POST" {
-		return s.handleCreateAccount(w, r)
+		return s.handleCreateUser(w, r)
 	}
 	if r.Method == "DELETE" {
-		return s.handleDeleteAccount(w, r)
+		return s.handleDeleteUser(w, r)
 	}
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
-func (s *APIServer) handleGetAccount(
+func (s *APIServer) handleGetUser(
+	w http.ResponseWriter, r *http.Request,
+) error {
+	id := mux.Vars(r)["id"]
+	fmt.Println(id)
+	user := NewUser("Daneker", "Kaliaskaruly", 17)
+	return WriteJSON(w, http.StatusCreated, user)
+}
+
+func (s *APIServer) handleCreateUser(
 	w http.ResponseWriter, r *http.Request,
 ) error {
 	return nil
 }
 
-func (s *APIServer) handleCreateAccount(
-	w http.ResponseWriter, r *http.Request,
-) error {
-	return nil
-}
-
-func (s *APIServer) handleDeleteAccount(
-	w http.ResponseWriter, r *http.Request,
-) error {
-	return nil
-}
-
-func (s *APIServer) handleTransfer(
+func (s *APIServer) handleDeleteUser(
 	w http.ResponseWriter, r *http.Request,
 ) error {
 	return nil
