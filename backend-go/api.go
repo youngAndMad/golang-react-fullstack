@@ -9,16 +9,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type APIServer struct {
-	listenAddr string
-}
-
-type apiFunc func(http.ResponseWriter, *http.Request) error
-
-type ApiError struct {
-	Error string
-}
-
 func WriteJSON(w http.ResponseWriter, status int, value any) error {
 	w.WriteHeader(status)
 	w.Header().Add("Content-Type", "application/json")
@@ -71,16 +61,22 @@ func (s *APIServer) handleUser(
 func (s *APIServer) handleGetUser(
 	w http.ResponseWriter, r *http.Request,
 ) error {
-	id := mux.Vars(r)["id"]
-	fmt.Println(id)
-	user := NewUser("Daneker", "Kaliaskaruly", 17)
-	return WriteJSON(w, http.StatusCreated, user)
+	return WriteJSON(w, http.StatusCreated, nil)
 }
 
 func (s *APIServer) handleCreateUser(
 	w http.ResponseWriter, r *http.Request,
 ) error {
-	return nil
+	req := new(UserRegistrationRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		return err
+	}
+	user, err := NewUser(req.FirstName, req.LastName, req.Email, req.Password, (req.Age), req.Gender)
+	if err != nil {
+		return err
+	}
+	log.Println(user)
+	return WriteJSON(w, http.StatusCreated, user)
 }
 
 func (s *APIServer) handleDeleteUser(
