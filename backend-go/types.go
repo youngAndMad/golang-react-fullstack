@@ -10,6 +10,8 @@ import (
 
 type APIServer struct {
 	listenAddr string
+
+	store Storage
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error

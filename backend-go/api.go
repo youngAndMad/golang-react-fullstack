@@ -24,7 +24,6 @@ func commonMiddleware(next http.Handler) http.Handler {
 func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := f(w, r); err != nil {
-			// handle this error
 			WriteJSON(w, http.StatusBadRequest, ApiError{Error: err.Error()})
 		}
 	}
@@ -45,9 +44,11 @@ func (s *APIServer) Run() {
 
 func newAPIServer(
 	listenAddr string,
+	storage Storage,
 ) *APIServer {
 	return &APIServer{
 		listenAddr: listenAddr,
+		store:      storage,
 	}
 }
 
@@ -83,6 +84,7 @@ func (s *APIServer) handleCreateUser(
 	if err != nil {
 		return err
 	}
+	s.store.CreateUser(user)
 	return WriteJSON(w, http.StatusCreated, user)
 }
 
