@@ -14,7 +14,7 @@ func main() {
 	if err := store.Init(); err != nil {
 		log.Fatal(err)
 	}
-	server := newAPIServer(":3000", store)
+	server := newAPIServer(":8080", store)
 	server.Run()
 	//go run storago.go main.go api.go types.go
 }
