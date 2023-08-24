@@ -31,10 +31,10 @@ type User struct {
 	ID        int       `json:"id"`
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
+	Email     string    `json:"email"`
 	Gender    Gender    `json:"gender"`
 	Age       int64     `json:"age"`
 	Password  string    `json:"-"`
-	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

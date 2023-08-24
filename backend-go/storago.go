@@ -122,9 +122,9 @@ func scanIntoUser(rows *sql.Rows) (*User, error) {
 		&User.FirstName,
 		&User.LastName,
 		&User.Email,
+		&User.Gender,
 		&User.Age,
 		&User.Password,
-		&User.Gender,
 		&User.CreatedAt,
 	)
 

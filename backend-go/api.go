@@ -5,37 +5,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
-func WriteJSON(w http.ResponseWriter, status int, value any) error {
-	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(value)
-}
-
-func commonMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
-	})
-}
-
-func makeHTTPHandlerFunc(f apiFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := f(w, r); err != nil {
-			WriteJSON(w, http.StatusBadRequest, ApiError{Error: err.Error()})
-		}
-	}
-}
-
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
-	router.Use(commonMiddleware)
+	router.Use(ResponseTypeMiddleware)
 
 	router.HandleFunc("/user", makeHTTPHandlerFunc(s.handleUser))
-	router.HandleFunc("/user/{id}", makeHTTPHandlerFunc(s.handleGetUser))
+	router.HandleFunc("/user/{id}", makeHTTPHandlerFunc(s.handleManageUser))
 
 	log.Println("server running on port", s.listenAddr)
 
@@ -56,21 +37,24 @@ func (s *APIServer) handleUser(
 	w http.ResponseWriter, r *http.Request,
 ) error {
 	if r.Method == "GET" {
-		return s.handleGetUser(w, r)
-	}
-	if r.Method == "POST" {
+		return s.handleAllUsers(w, r)
+	} else if r.Method == "POST" {
 		return s.handleCreateUser(w, r)
+	} else {
+		return fmt.Errorf("method not allowed %s", r.Method)
 	}
-	if r.Method == "DELETE" {
-		return s.handleDeleteUser(w, r)
-	}
-	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
-func (s *APIServer) handleGetUser(
+func (s *APIServer) handleManageUser(
 	w http.ResponseWriter, r *http.Request,
 ) error {
-	return WriteJSON(w, http.StatusCreated, nil)
+	if r.Method == "GET" {
+		return s.handleGetUserById(w, r)
+	} else if r.Method == "DELETE" {
+		return s.handleDeleteUser(w, r)
+	} else {
+		return fmt.Errorf("method not allowed %s", r.Method)
+	}
 }
 
 func (s *APIServer) handleCreateUser(
@@ -84,12 +68,54 @@ func (s *APIServer) handleCreateUser(
 	if err != nil {
 		return err
 	}
-	s.store.CreateUser(user)
+	if err := s.store.CreateUser(user); err != nil {
+		return err
+	}
 	return WriteJSON(w, http.StatusCreated, user)
 }
 
 func (s *APIServer) handleDeleteUser(
 	w http.ResponseWriter, r *http.Request,
 ) error {
-	return nil
+	id, err := getId(r)
+
+	if err != nil {
+		return err
+	}
+
+	if err := s.store.DeleteUserById(id); err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusNoContent, map[string]string{"message": "user deleted successfully" + strconv.Itoa(id)})
+}
+
+func (s *APIServer) handleAllUsers(
+	w http.ResponseWriter, r *http.Request,
+) error {
+	users, err := s.store.GetAllUsers()
+	if err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusOK, users)
+}
+
+func (s *APIServer) handleGetUserById(
+	w http.ResponseWriter, r *http.Request,
+) error {
+	id, err := getId(r)
+
+	if err != nil {
+		return err
+	}
+
+	user, err := s.store.GetUserById(id)
+
+	if err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusOK, user)
+
 }
